@@ -1,0 +1,609 @@
+// PROJECT MINESWEEPER (CONSOLE C)
+// file.h
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+
+void createArray(int arrSize);
+void swap(int *a, int *b);
+void splitData(int *data, int size, int firstHalfSize, int *arr1, int *arr2);
+
+int main(int argc, char* argv[])
+{
+
+    int a, b;
+    int data[10];
+    int arr1[5];
+    int arr2[10];
+
+
+
+
+    splitData(data, 7, 3, arr1, arr2);
+
+    return 0;
+
+}
+
+void createArray(int arrSize){
+
+    int generated, low, high, temp;
+
+    if(arrSize > 100){
+        printf("Size too large!\n");
+        return 0;
+    }
+
+    printf("Insert Low and High values:\n");
+    scanf("%d %d", &low, &high);
+
+
+    // Err check
+    if(low > high){
+
+        // switch
+        temp = low;
+        low = high;
+        high = temp;
+    }
+
+    // allocate memory for array
+    int *Arr = (int*)malloc(arrSize * sizeof(int));
+
+    srand(time(0));
+    for(int i = 0; i < arrSize; i++){
+
+        // get random number from range [Low, High]
+        generated = rand() % (high + 1 - low) + low;
+
+        Arr[i] = generated;
+
+    }
+
+
+
+    for(int i = 0; i < arrSize; i++){
+
+        printf("%d ", Arr[i]);
+
+    }
+
+    free(Arr);
+    // after free, adjust pointer to NULL
+    Arr = NULL;
+}
+
+void swap(int *a, int *b){
+    int temp;
+
+    temp = *b;
+    *b = *a;
+    *a = temp;
+}
+
+void splitData(int *data, int size, int firstHalfSize, int **arr1, int **arr2){
+    if(((float)size/2) != (float)firstHalfSize){
+        printf("Array uneven");
+        return (-1);
+    }
+    int someIntInput;
+    *data = (int*)malloc(size * sizeof(int));
+
+    printf("Insert numbers:\n");
+    for(int i = 0; i < size; i++){
+        scanf("%d", &someIntInput);
+        data[i] = someIntInput;
+    }
+
+    *arr1 = (int*)malloc(firstHalfSize * sizeof(int));
+    *arr2 = (int*)malloc(size * sizeof(int));
+
+    for(int i = 0; i < firstHalfSize; i++){
+        (*arr1)[i] = data[i];
+    }
+    for(int i = firstHalfSize; i < size; i++){
+        (*arr2)[i] = data[i];
+    }
+    printf("first arr:\n");
+    for(int i = 0; i < firstHalfSize; i++){
+        printf("%d ", arr1[i]);
+    }
+    printf("\nsec arr:\n");
+    for(int i = firstHalfSize; i < size; i++){
+        printf("%d ", arr2[i]);
+    }
+}
+
+
+// func.c
+
+#include "file.h"
+int row, column;
+
+void saveGame(char **box, char **mineBox){
+    char c;
+    FILE *fp = NULL;
+    FILE *fp1 = NULL;
+    fp = fopen("gameGrid.bin", "wb");
+    fp1 = fopen("mineGrid.bin", "wb");
+    // save the game array
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            c = box[i][j];
+            fwrite(&c, sizeof(char), 1,fp);
+        }
+    }
+    // save mine array
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            c = mineBox[i][j];
+            fwrite(&c, sizeof(char), 1, fp1);
+        }
+    }
+
+    fclose(fp);
+    fclose(fp1);
+}
+
+
+void saveGrid(void){
+    FILE *fp = NULL;
+    fp = fopen("grid.bin", "wb");
+    // save previous game rows and columns
+    fwrite(&row, sizeof(int), 1, fp);
+    fwrite(&column, sizeof(int), 1, fp);
+    fclose(fp);
+}
+
+void loadGrid(void){
+    int previousRows, previousColumns;
+    FILE *fp = NULL;
+    fp = fopen("grid.bin", "rb");
+    if(fp == NULL){
+        printf("File not found!\n");
+    }
+    fread(&previousRows, sizeof(int), 1, fp);
+    fread(&previousColumns, sizeof(int), 1, fp);
+    row = previousRows;
+    column = previousColumns;
+    fclose(fp);
+}
+
+// main.c
+
+#include "file.h"
+
+int lost = 0, win = 0, row, column;
+
+
+int main()
+{
+    displayWelcomeScreen();
+
+    int decision;
+    scanf("%d", &decision);
+
+    switch (decision){
+        // play new game
+    case 1:
+
+        getBoardSize();
+        saveGrid();
+        system("cls");
+        break;
+
+    case 2:
+        system("cls");
+        loadGrid();
+        break;
+
+    case 3:
+            // display highscores
+        system("CLS");
+        printf("\t*Scores*\n");
+        displayScore();
+        break;
+
+    default:
+            // exit
+        printf("\n\nGoodbye!.");
+        (void) getchar();
+        exit(EXIT_SUCCESS);
+
+    }
+
+    if(decision == 1){
+        // dynamically allocate memory for minefield
+        char **box = malloc(row * sizeof(char*));
+        // for each row allocate a separate array
+        for(int i = 0; i < row; i++){
+            box[i] = malloc(column * sizeof(char));
+
+        }
+        // fill it with 'o' symbol
+        fillGameBoard(box);
+        printGameBoard(box);
+
+        // dynamically allocate memory for mines
+        char **mineBox = malloc(row * sizeof(char*));
+        // for each row allocate a separate array
+        for(int i = 0; i < row; i++){
+            mineBox[i] = malloc(column * sizeof(char));
+
+        }
+        // fill mine grid with '*'
+        fillMineBoard(mineBox);
+        //printGameBoard(mineBox);
+
+        // play
+        double timeSpent;
+        clock_t startingTime = clock();
+        playGame(box, mineBox);
+        clock_t endingTime = clock();
+        timeSpent = (double)((startingTime - endingTime) / CLOCKS_PER_SEC) * (-1);
+        // append scores
+        FILE *fp = NULL;
+        fp = fopen("log.txt", "a");
+        fprintf(fp, "%.0f", timeSpent);
+        fclose(fp);
+    }
+    if(decision == 2){
+        // dynamically allocate memory for minefield
+        char **box = malloc(row * sizeof(char*));
+        // for each row allocate a separate array
+        for(int i = 0; i < row; i++){
+            box[i] = malloc(column * sizeof(char));
+
+        }
+
+        // dynamically allocate memory for mines
+        char **mineBox = malloc(row * sizeof(char*));
+        // for each row allocate a separate array
+        for(int i = 0; i < row; i++){
+            mineBox[i] = malloc(column * sizeof(char));
+
+        }
+        char c;
+        FILE *fp = NULL;
+        fp = fopen("gameGrid.bin", "rb");
+        if(fp == NULL){
+            printf("File not found!\n");
+        }
+        FILE *fp1 = NULL;
+        fp1 = fopen("mineGrid.bin", "rb");
+        if(fp == NULL){
+            printf("File not found!\n");
+        }
+        for(int i = 0; i < row; i++){
+            for(int j = 0; j < column; j++){
+                fread(&c, sizeof(char), 1, fp);
+                box[i][j] = c;
+
+            }
+        }
+        for(int i = 0; i < row; i++){
+            for(int j = 0; j < column; j++){
+                fread(&c, sizeof(char), 1, fp1);
+                mineBox[i][j] = c;
+
+            }
+        }
+
+
+        printGameBoard(box);
+        //printGameBoard(mineBox);
+
+        fclose(fp);
+        fclose(fp1);
+
+        double timeSpent;
+
+        clock_t startingTime = clock();
+        playGame(box, mineBox);
+        clock_t endingTime = clock();
+        timeSpent = (double)((startingTime - endingTime) / CLOCKS_PER_SEC) * (-1);
+        assert(timeSpent > 0);
+        FILE *fp2 = NULL;
+        fp = fopen("log.txt", "a");
+        fprintf(fp2, "%.0f", timeSpent);
+        fclose(fp2);
+
+    }
+
+
+    return 0;
+}
+
+
+
+
+void getBoardSize(void){
+    // get valid input
+    while(1){
+        printf("How many rows? [3,15] -->");
+        scanf("%d", &row);
+        printf("How many columns?[3,15] -->");
+        scanf("%d", &column);
+        if(row >= 3 && row <= 15 && column >= 3 && column <= 15){
+            break;
+        }else{
+            printf("Size unavailable\n");
+            continue;
+        }
+    }
+}
+
+
+
+void printGameBoard(char **box){
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            printf("%c", box[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+
+
+// fill game board with 'o'
+void fillGameBoard(char **box){
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            box[i][j] = 'o';
+        }
+    }
+}
+
+
+
+
+void fillMineBoard(char **mineBox){
+
+    // get rid of garbage values
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            mineBox[i][j] = 'o';
+        }
+    }
+    // generate 1-2 mines for each row
+    int mine1, mine2;
+    for(int i = 0; i < row; i++){
+        mine1 = rand() % column;
+        mine2 = rand() % column;
+        mineBox[i][mine1] = '*';
+        mineBox[i][mine2] = '*';
+    }
+
+}
+
+
+
+
+
+void playGame(char **box, char **mineBox){
+    // mineCount counts how many mines are near your click
+    int selectRow, selectColumn, mineCount;
+
+    while(lost == 0){
+
+         /*------------------------------------*/
+        /* get input and check for validation */
+        printf("Row -->");
+        scanf("%d", &selectRow);
+        printf("Column -->");
+        scanf("%d", &selectColumn);
+
+        // check for valid input
+        if(selectRow < 0 || selectRow > row)
+            continue;
+        if(selectColumn < 0 || selectColumn > column)
+            continue;
+
+        /*-------------------------------------------*/
+
+        // arrays start from 0, adjusting values
+        selectRow--;
+        selectColumn--;
+        system("cls");
+
+        // counting nearby mines
+        mineCount = checkForNearbyMines(selectRow, selectColumn, mineBox);
+        // if stepped on a mine, lose game
+        if(lost == 1){
+            system("cls");
+            printf("You've lost!\n");
+            // print final result and display mines
+            printGameBoard(box);
+            printGameBoard(mineBox);
+            break;
+        }
+        // if all fields were discovered, win game
+        winGame(box, mineBox);
+        if(win == 1){
+            system("cls");
+            printf("You've won the game!\n");
+            break;
+        }
+
+        // convert the amount of mines to char symbol
+        box[selectRow][selectColumn] = (char)(((int)'0') + mineCount);
+
+        // display field after each decision
+        printGameBoard(box);
+        //printGameBoard(mineBox);
+
+        // save each move
+        saveGame(box, mineBox);
+
+
+
+    }
+}
+
+
+
+// this function checks for mines in all 8 directions, also checks if you're not hitting
+// any borders and accordingly counts the mines
+int checkForNearbyMines(int selectRow, int selectColumn, char **mineBox){
+    int nearbyMines = 0;
+    if(mineBox[selectRow][selectColumn] == '*'){
+        lost = 1;
+    }
+    // check for mines below & to the right
+    if(selectRow < (row - 1) && selectColumn < (column - 1)){
+        if(mineBox[selectRow+1][selectColumn] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow][selectColumn+1] == '*')
+            nearbyMines++;
+
+
+        if(mineBox[selectRow+1][selectColumn+1] == '*')
+            nearbyMines++;
+        // check if columns to the left can be checked
+        if(selectColumn != 0){
+            if(mineBox[selectRow+1][selectColumn-1] == '*')
+                nearbyMines++;
+            if(mineBox[selectRow][selectColumn-1] == '*')
+                nearbyMines++;
+
+        }
+        // check if rows above can be checked
+        if(selectRow != 0){
+            if(mineBox[selectRow-1][selectColumn] == '*')
+                nearbyMines++;
+            if(mineBox[selectRow-1][selectColumn+1] == '*')
+                nearbyMines++;
+            // check if columns to the left can be checked
+            if(selectColumn != 0){
+                if(mineBox[selectRow-1][selectColumn-1] == '*')
+                    nearbyMines++;
+            }
+        }
+
+    }
+    // check the last row except the last columns
+    if(selectRow == (row - 1) && selectColumn != (column - 1)){
+        if(mineBox[selectRow-1][selectColumn] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow-1][selectColumn+1] == '*')
+            nearbyMines++;
+        //
+        if(mineBox[selectRow][selectColumn+1] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow-1][selectColumn-1] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow][selectColumn-1] == '*')
+            nearbyMines++;
+    }
+    // check the last column part but not the last row
+    if(selectColumn == (column - 1) && selectRow != (row - 1)){
+        if(mineBox[selectRow][selectColumn-1] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow+1][selectColumn-1] == '*')
+            nearbyMines++;
+        //
+        if(mineBox[selectRow+1][selectColumn] == '*')
+            nearbyMines++;
+        if(selectRow != 0){
+            if(mineBox[selectRow-1][selectColumn-1] == '*')
+                nearbyMines++;
+            if(mineBox[selectRow-1][selectColumn] == '*')
+                nearbyMines++;
+        }
+    }
+    // check if selection is in the last element
+    if(selectRow == (row - 1) && selectColumn == (column - 1)){
+        if(mineBox[selectRow][selectColumn-1] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow-1][selectColumn-1] == '*')
+            nearbyMines++;
+        if(mineBox[selectRow-1][selectColumn] == '*')
+            nearbyMines++;
+    }
+
+    assert(nearbyMines < 9);
+
+    return nearbyMines;
+
+}
+
+
+
+// handle player winning
+void winGame(char **box, char **mineBox){
+    int temp = 1;
+    int minesOnBoard = 0;
+
+    // checks how many mines were generated
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            if(mineBox[i][j] == '*')
+                minesOnBoard++;
+        }
+    }
+    // checks if there are no more possible empty fields
+    for(int i = 0; i < row; i++){
+        for(int j = 0; j < column; j++){
+            if(box[i][j] != 'o'){
+                temp++;
+            }
+        }
+    }
+
+
+    if(temp == ((row*column) - minesOnBoard))
+        win = 1;
+}
+
+void displayWelcomeScreen(void){
+    printf("\t *Minesweeper*\n");
+    printf("\t *Created by*\n");
+    printf("\tPovilas Petrauskas\n\n");
+    printf("\t MENU:\n");
+    printf("1. New Game   [press 1]\n");
+    printf("2. Load Game  [press 2]\n");
+    printf("3. Highscores [press 3]\n");
+    printf("4. Exit       [press 4]\n");
+
+
+}
+
+
+
+void play_again(char **box, char **mineBox){
+    char c;
+    printf("\nDo you wish to play again?[Y/N]\n");
+    scanf(" %c", &c);
+    if(c == 'y' || c == 'Y'){
+        system("cls");
+        playGame(box, mineBox);
+    }
+
+}
+
+void displayScore(void){
+    char a;
+    FILE *fp = NULL;
+    fp = fopen("log.txt", "r");
+    if(fp == NULL){
+        printf("Error!\n");
+        assert(fp == NULL);
+    }
+     a = fgetc(fp);
+    while(!feof(fp)){
+        printf("Played %c seconds\n", a);
+        a = fgetc(fp);
+
+    }
+    fclose(fp);
+}
+
+// to do list:
+
+// add recursion to discover nearby empty fields
+// improve scoring system
