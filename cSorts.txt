@@ -1,0 +1,219 @@
+// sorts
+// file.h
+
+#ifndef file.h
+#define file.h
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+void fillArray(int *array, int size);
+void printArray(int *array, int size);
+void swap(int *a, int *b);
+void insertionSort(int *array, int size);
+void selectionSort(int *array, int size);
+void merge(int a[],int i1,int j1,int i2,int j2);
+void mergeSort(int a[],int i,int j);
+void report(void);
+
+extern assignment, comparisson, runTime;
+clock_t start, _end;
+double cpu_time_used;
+
+#endif // file
+
+
+// functions.c
+
+#include "file.h"
+
+assignment = 0;
+comparisson = 0;
+runTime = 0;
+
+
+void fillArray(int *array, int size)
+{
+    srand(time(0));
+    int random;
+    for(int i = 0; i < size; i++)
+    {
+        random = rand() % 100 + 1;
+        array[i] = random;
+    }
+}
+
+void printArray(int *array, int size)
+{
+    for(int i = 0; i < size; i++)
+    {
+        printf("%d ", array[i]);
+    }
+    printf("\n");
+}
+
+void swap(int *a, int *b)
+{
+    int temp;
+    temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void insertionSort(int *array, int size)
+{
+    start = clock();
+    assignment = 0, comparisson = 0;
+    int i, j;
+    for(i = 1; i <= size - 1; i++)
+    {
+        j = i;
+        assignment++;
+        // insertion sort picks one element and searches for the position he belongs to
+        while(j > 0 && array[j-1] > array[j])
+        {
+            comparisson += 2; // compares two elements
+            swap(&array[j], &array[j-1]);
+            assignment += 3;
+            j--;
+        }
+    }
+    float _end = clock();
+    cpu_time_used = ((double) (_end - start));
+    runTime = cpu_time_used;
+}
+
+void report(void)
+{
+    printf("\t*^ sort report*\n\tCompared %d times\n\tAssigned %d times\n", comparisson, assignment);
+}
+
+void selectionSort(int *array, int size)
+{
+    start = clock();
+    assignment = 0, comparisson = 0;
+    int temp;
+    for (int i = 0 ; i < (size - 1); i++)
+    {
+        temp = i;
+        assigment++;
+        for (int j = i + 1; j < size; j++)
+        {
+            comparisson += 1;
+            if (array[temp] > array[j])
+            {
+                temp = j;
+                assignment += 1;
+            }
+        }
+        if (temp != i)
+        {
+            swap(&array[i], &array[temp]);
+            assignment += 3;
+        }
+    }
+    _end = clock();
+    cpu_time_used = ((double)(_end-start));
+    runTime = cpu_time_used;
+}
+
+void mergeSort(int a[],int i,int j)
+{
+    start = clock();
+    comparisson = 0, assignment = 0;
+    int mid;
+    if(i < j)
+    {
+        mid=(i+j)/2;
+        assignment++;
+        mergeSort(a,i,mid);
+        mergeSort(a,mid+1,j);
+        merge(a,i,mid,mid+1,j);
+    }
+    _end = clock();
+    cpu_time_used = ((double)(_end-start));
+    runTime = cpu_time_used;
+}
+
+void merge(int a[],int i1,int j1,int i2,int j2)
+{
+    int temp[40];
+    int i,j,k;
+    i=i1;    // first half
+    j=i2;    // second half
+    k=0;
+
+    while(i<=j1 && j<=j2)
+    {
+        if(a[i]<a[j]){
+            comparisson += 2;
+            temp[k++]=a[i++];
+            assignment += 2;
+        }
+        else{
+            comparisson += 2;
+            temp[k++]=a[j++];
+            assignment += 2;
+        }
+    }
+
+    while(i<=j1)    //copy first half
+        temp[k++]=a[i++];
+        assignment += 2;
+
+    while(j<=j2)    //copy second half
+        temp[k++]=a[j++];
+        assignment += 2;
+
+    for(i=i1,j=0; i<=j2; i++,j++)
+        a[i]=temp[j];
+        assignment += 2;
+}
+
+// main.c
+
+#include "file.h"
+
+int main()
+{
+    const int arrSize = 20;
+    int arr[arrSize];
+
+    fillArray(arr, arrSize);
+    printArray(arr, arrSize);
+    insertionSort(arr, arrSize);
+
+    int a, b; // assign and compare variables in the given order
+    float c; // run time
+    a = assignment;
+    b = comparisson;
+    c = runTime;
+
+    selectionSort(arr, arrSize);
+    int d, e;
+    float f;
+    d = assignment;
+    e = comparisson;
+    f = runTime;
+
+    mergeSort(arr, 0, arrSize-1);
+    int g, h;
+    float i;
+    g = assignment;
+    h = comparisson;
+    i = runTime;
+
+
+    // display efficiency
+    printf("\n");
+    printf("Insertion sort:\n\tAssigned %d times...\n\tcompared %d times\n\trun time: %f\n", a, b, c);
+    printf("Selection sort:\n\tAssigned %d times...\n\tcompared %d times\n\trun time: %f\n", d, e, f);
+    printf("Merge sort:\n\tAssigned %d times...\n\tcompared %d times\n\trun time: %f\n", g, h, i);
+
+    FILE *fp = NULL;
+    fp = fopen("results.txt", "w");
+    fprintf(fp, "Most efficient array -> merge sort, %d assignments, %d comparissons and %f run_time\nWorst -> selection sort, %d assignments, %d comparissons and %f run_time", g, h, i, d, e, f);
+    fclose(fp);
+    return 0;
+}

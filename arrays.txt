@@ -1,0 +1,136 @@
+// arrays
+// file.h
+
+#ifndef file.h
+#define file.h
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+extern int save, load;
+void saveToFile(char *fileName, int *array, int size);
+void loadFromFile(char *fileName, int *array, int size);
+
+#endif
+
+
+// file.c
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int save = 0, load = 0;
+
+void saveToFile(char *fileName, int *array, int size)
+{
+    FILE *fp = NULL;
+
+    if(fp != NULL){
+        printf("Error!\n");
+        return 1;
+    }
+    fp = fopen(fileName,"wb");
+    fwrite(array, sizeof(int), size, fp);
+
+    fflush(fp);
+    fclose(fp);
+
+    save++;
+}
+
+void loadFromFile(char *fileName, int *array, int size)
+{
+    FILE *fp = NULL;
+
+    if(fp != NULL){
+        printf("Error!\n");
+        return 1;
+    }
+    fp = fopen(fileName,"rb");
+    fread(array, sizeof(int), size, fp);
+
+    fflush(fp);
+    fclose(fp);
+
+    load++;
+}
+
+// main.c
+
+#include "file.h"
+
+void fillArray(int *array, int size);
+void printArray(int *array, int size);
+void validation(int *savedArray, int *loadedArray, int size);
+void counterValidation(int timeSaved, int timesLoaded);
+
+
+int main()
+{
+    int myArray[20]; // savedArray
+    int loadedArray[20]; // loadedArray
+
+    int m1[20], m2[20], m3[20];
+
+
+    fillArray(myArray, 20);
+    printArray(myArray, 20);
+    saveToFile("f1.txt", myArray, 20);
+    loadFromFile("f1.txt", loadedArray, 20);
+    printArray(loadedArray, 20);
+
+    validation(myArray, loadedArray, 20); // checks if arrays match
+
+    // 10.2
+
+    fillArray(m1, 20);
+    fillArray(m2, 20);
+    fillArray(m3, 20);
+
+    saveToFile("f2.txt", m1, 20);
+    saveToFile("f2.txt", m3, 20);
+    loadFromFile("f2.txt", m1, 20);
+    saveToFile("f3.txt", m2, 20);
+    loadFromFile("f3.txt", m3, 20);
+    loadFromFile("f2.txt", m2, 20);
+
+    counterValidation(save, load); // checks if save and load counts match
+
+
+    return 0;
+}
+
+void fillArray(int *array, int size){
+    int temp;
+    srand(time(0));
+    for(int i = 0; i < size; i++){
+        temp = rand() % 100;
+        array[i] = temp;
+    }
+}
+
+void printArray(int *array, int size){
+    for(int i = 0; i < size; i++){
+        printf("%d ", array[i]);
+    }
+    printf("\n");
+}
+
+void validation(int *savedArray, int *loadedArray, int size){
+    for(int i = 0; i < size; i++){
+        if(savedArray[i] != loadedArray[i]){ // if arrays dont match
+            printf("Something's wrong!\n");
+            break;
+            return (-1);
+        }
+    }
+    printf("All good!\n");
+}
+
+void counterValidation(int timeSaved, int timesLoaded){
+    if(timeSaved == timesLoaded){
+        printf("Even better now!\n");
+    }else{
+        printf("But suddenly something went wrong...\n");
+    }
+}
