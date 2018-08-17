@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+
+void createArray(int arrSize);
+void swap(int *a, int *b);
+void splitData(int *data, int size, int firstHalfSize, int *arr1, int *arr2);
+
+int main(int argc, char* argv[])
+{
+
+    int a, b;
+    int data[10];
+    int arr1[5];
+    int arr2[10];
+
+
+
+
+    splitData(data, 7, 3, arr1, arr2);
+
+    return 0;
+
+}
+
+void createArray(int arrSize){
+
+    int generated, low, high, temp;
+
+    if(arrSize > 100){
+        printf("Size too large!\n");
+        return 0;
+    }
+
+    printf("Insert Low and High values:\n");
+    scanf("%d %d", &low, &high);
+
+
+    // Err check
+    if(low > high){
+
+        // switch
+        temp = low;
+        low = high;
+        high = temp;
+    }
+
+    // allocate memory for array
+    int *Arr = (int*)malloc(arrSize * sizeof(int));
+
+    srand(time(0));
+    for(int i = 0; i < arrSize; i++){
+
+        // get random number from range [Low, High]
+        generated = rand() % (high + 1 - low) + low;
+
+        Arr[i] = generated;
+
+    }
+
+
+
+    for(int i = 0; i < arrSize; i++){
+
+        printf("%d ", Arr[i]);
+
+    }
+
+    free(Arr);
+    // after free, adjust pointer to NULL
+    Arr = NULL;
+}
+
+void swap(int *a, int *b){
+    int temp;
+
+    temp = *b;
+    *b = *a;
+    *a = temp;
+}
+
+void splitData(int *data, int size, int firstHalfSize, int **arr1, int **arr2){
+    if(((float)size/2) != (float)firstHalfSize){
+        printf("Array uneven");
+        return (-1);
+    }
+    int someIntInput;
+    *data = (int*)malloc(size * sizeof(int));
+
+    printf("Insert numbers:\n");
+    for(int i = 0; i < size; i++){
+        scanf("%d", &someIntInput);
+        data[i] = someIntInput;
+    }
+
+    *arr1 = (int*)malloc(firstHalfSize * sizeof(int));
+    *arr2 = (int*)malloc(size * sizeof(int));
+
+    for(int i = 0; i < firstHalfSize; i++){
+        (*arr1)[i] = data[i];
+    }
+    for(int i = firstHalfSize; i < size; i++){
+        (*arr2)[i] = data[i];
+    }
+    printf("first arr:\n");
+    for(int i = 0; i < firstHalfSize; i++){
+        printf("%d ", arr1[i]);
+    }
+    printf("\nsec arr:\n");
+    for(int i = firstHalfSize; i < size; i++){
+        printf("%d ", arr2[i]);
+    }
+}
+
